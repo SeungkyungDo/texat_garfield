@@ -30,6 +30,11 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
+    const int nElectrons = 10;
+    const double xSpacing = 0.1;
+    const double xMin = 5.;
+    const double xMax = 15.;
+
     TApplication app("app", &argc, argv);
     // Setup the gas mixture and the corresponding file.
     MediumMagboltz gas("he4", 90., "co2", 10.);
@@ -117,7 +122,7 @@ int main(int argc, char * argv[])
     graphBlue->SetMarkerColor(kBlue);
 
     ///////////////////////////////////////////////////////////////////////// Drawing cell and drift. moved and modfied by S. Bae 240124
-    TCanvas* can = new TCanvas("can","",600,600);
+    TCanvas* can = new TCanvas("can","",1600,1600);
     ViewCell cellView;
     cellView.SetCanvas(can);
     cellView.SetComponent(&cmp);
@@ -147,14 +152,6 @@ int main(int argc, char * argv[])
     // Assuming the transfer function is named "TexAT_v2_transfer_function.txt".
     // readTransferFunction(sensor); // Implement this function or load the transfer function file.
 
-    // Simulate the drift of 100 electrons.
-    //const int nElectrons = 100;			//commented by S. Bae 240124
-    //const int nset=100;						//added by S. Bae 240124
-    //const int npos=100;							//added by S. Bae 240129
-    const int nset=100;						//added by S. Bae 240124
-    const int npos=100;							//added by S. Bae 240129
-    const int nElectrons = npos*nset;		//modified by S. Bae 240129
-
 
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
 
@@ -172,53 +169,62 @@ int main(int argc, char * argv[])
     tr->Branch("zEnd",&zEnd,"zEnd/D");
     tr->Branch("tEnd",&tEnd,"tEnd/D");
     //////////////////////////////////////////////////////////////////////
-    for (int i = 0; i < nElectrons; ++i) {
-        int nElectronsCollected = 0;
-        // double sumDriftTime = 0.;
+    for (int i = 0; i < nElectrons; ++i)
+    {
+        for (double x0 = xMin; x0 < xMax; x0+=xSpacing)
+        {
+            //double x0 = floor(1.0*i/nset)*0.1+7.65, y0 = -5., z0 = 0.; // Initial position of the electron. //x0 midified by S. Bae 240129
+            double y0 = -5.;
+            double z0 = 0.;
+            int nElectronsCollected = 0;
+            // double sumDriftTime = 0.;
 
-        double x0 = floor(1.0*i/nset)*0.1+7.65, y0 = -5., z0 = 0.; // Initial position of the electron. //x0 midified by S. Bae 240129
-        double t0 = 0.; // Initial time.
-        double e0 = 0.;
-        double dx0=0., dy0=0., dz0=0.;
+            double t0 = 0.; // Initial time.
+            double e0 = 0.;
+            double dx0=0., dy0=0., dz0=0.;
 
-        drift.AvalancheElectron(x0, y0, z0, t0, e0, dx0, dy0, dz0);
-        // Drift an electron from FC1 towards MM+GEM.
-
-
-        // Get the Avalanche size (It corresponding to the number or electrons)
-        int ne, ni; // Get the number of electrons and ions in the avalanche
-        drift.GetAvalancheSize(ne,ni);
-
-        int np = drift.GetNumberOfElectronEndpoints();
-
-        //std::cout<<i<< " ne: " << ne << " ni: " << ni <<std::endl;
-        //cout<<i<< " ne: " << ne << " ni: " << ni <<endl;	//commented by S. Bae 240124
+            drift.AvalancheElectron(x0, y0, z0, t0, e0, dx0, dy0, dz0);
+            // Drift an electron from FC1 towards MM+GEM.
 
 
-        constexpr bool twod = true;
-        constexpr bool drawaxis = false;	//changed to flase S. Bae 240124
+            // Get the Avalanche size (It corresponding to the number or electrons)
+            int ne, ni; // Get the number of electrons and ions in the avalanche
+            drift.GetAvalancheSize(ne,ni);
 
-        cout << "electron-" << i << ": # of avalanche electrons = " << np << endl;
-        for (int n = 0; n < np; ++n) {
-            //  double xStart, yStart, zStart, tStart, eStart;   //commented by S. Bae 240124
-            //  double xEnd, yEnd, zEnd, tEnd, eEnd;				//commented by S. Bae 240124
-            int status;
+            int np = drift.GetNumberOfElectronEndpoints();
 
-            drift.GetElectronEndpoint(n, xStart, yStart, zStart, tStart, eStart, xEnd, yEnd, zEnd, tEnd, eEnd, status);
-            // drift.GetElectronEndpoint(i, x0, y0, z0, t0, e0, dx0, dy0, dz0, xEnd, yEnd, zEnd, tEnd, eEnd, dxEnd, dyEnd, dzEnd, status);
+            //std::cout<<i<< " ne: " << ne << " ni: " << ni <<std::endl;
+            //cout<<i<< " ne: " << ne << " ni: " << ni <<endl;	//commented by S. Bae 240124
 
-            if (std::abs(yEnd) < 0.1) {
-                nElectronsCollected++;
+
+            constexpr bool twod = true;
+            constexpr bool drawaxis = false;	//changed to flase S. Bae 240124
+
+            cout << i << "/" << nElectrons << " (" << x0 << "/" << xMax << ") : #AEl = " << np << endl;
+            for (int n = 0; n < np; ++n) {
+                //  double xStart, yStart, zStart, tStart, eStart;   //commented by S. Bae 240124
+                //  double xEnd, yEnd, zEnd, tEnd, eEnd;				//commented by S. Bae 240124
+                int status;
+
+                drift.GetElectronEndpoint(n, xStart, yStart, zStart, tStart, eStart, xEnd, yEnd, zEnd, tEnd, eEnd, status);
+                // drift.GetElectronEndpoint(i, x0, y0, z0, t0, e0, dx0, dy0, dz0, xEnd, yEnd, zEnd, tEnd, eEnd, dxEnd, dyEnd, dzEnd, status);
+
+                if (std::abs(yEnd) < 0.1) {
+                    nElectronsCollected++;
+                }
+
+                tr->Fill();
+                //driftView.Plot(twod, drawaxis);				//Added by S. Bae 240124
+                                                            //std::cout<< status << " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<std::endl;	//commented by S. Bae
+                                                            //cout<< status <<  " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<endl;	//commented by S. Bae
             }
-
-            tr->Fill();
-            driftView.Plot(twod, drawaxis);				//Added by S. Bae 240124
-                                                        //std::cout<< status << " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<std::endl;	//commented by S. Bae
-                                                        //cout<< status <<  " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<endl;	//commented by S. Bae
         }
     }
 
+    driftView.Plot(true, false);
+
     fnew->WriteTObject(tr);	//Added by S. Bae 240124
+    fnew->Print();			//Added by S. Bae 240124
     fnew->Close();			//Added by S. Bae 240124
 
     ViewField fieldView;
@@ -231,6 +237,9 @@ int main(int argc, char * argv[])
     can2->SetLeftMargin(0.16);
     fieldView.SetCanvas(can2);
     fieldView.PlotContour();
+
+    can -> SaveAs("figure_drift_electon.png");
+    can2 -> SaveAs("figure_field.png");
 
     app.Run(kTRUE);
     return 0;
