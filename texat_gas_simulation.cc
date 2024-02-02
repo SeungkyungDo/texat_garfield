@@ -30,10 +30,10 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
-    const int nElectrons = 10;
-    const double xSpacing = 0.1;
-    const double xMin = 5.;
-    const double xMax = 15.;
+    const int nElectrons = 1;
+    const double xSpacing = 0.5;
+    const double xMin = 7.;
+    const double xMax = 12.;
 
     TApplication app("app", &argc, argv);
     // Setup the gas mixture and the corresponding file.
@@ -88,9 +88,6 @@ int main(int argc, char * argv[])
     // Set the bounding box if necessary.
     // cmp.SetBoundingBox(xmin, ymin, zmin, xmax, ymax, zmax);
 
-
-
-
     // 전선 위치 데이터 설정
     const int nWires = ifcmax + imax; // 전선의 총 개수
     double wireX[nWires], wireY[nWires];
@@ -100,7 +97,7 @@ int main(int argc, char * argv[])
         graphBlack->SetPoint(i, i*WireFCpitch, -1*0.201); // GG_black 위치 설정
     }
 
-    graphBlack->SetMarkerStyle(20);
+    graphBlack->SetMarkerStyle(24);
     graphBlack->SetMarkerColor(kBlack);
 
 
@@ -109,7 +106,7 @@ int main(int argc, char * argv[])
         graphFC->SetPoint(i, i*WireFCpitch, -1*11.265); // FC 위치 설정
     }
 
-    graphFC->SetMarkerStyle(20);
+    graphFC->SetMarkerStyle(24);
     graphFC->SetMarkerColor(kBlack);
 
 
@@ -118,8 +115,35 @@ int main(int argc, char * argv[])
         graphBlue->SetPoint(i, 7.75+i*Wirepitch, -1*0.201); // GG_blue 위치 설정
     }
 
-    graphBlue->SetMarkerStyle(20);
-    graphBlue->SetMarkerColor(kBlue);
+    graphBlue->SetMarkerStyle(25);
+    //graphBlue->SetMarkerColor(kBlue);
+
+    ViewField fieldView;
+    fieldView.SetComponent(&cmp);
+    fieldView.SetPlane(0, 0, 1, 0, 0, 0);
+    //fieldView.SetArea(-5, -15, -15, 25, 2, 5);
+    //fieldView.SetVoltageRange(-1600.,200.);
+    //fieldView.SetVoltageRange(-300.,200.);
+
+    //fieldView.SetArea(5, -0.6, -15, 15, -0.1, 5);
+
+    if (1) {
+        fieldView.SetArea(0, -1, -15, 20, 0.1, 5);
+        fieldView.SetVoltageRange(-300.,0.);
+    }
+
+    TCanvas* can2 = new TCanvas("can2", "", 2600, 1600);
+    can2->SetLeftMargin(0.16);
+    fieldView.SetCanvas(can2);
+    fieldView.PlotContour();
+    graphBlack->Draw("P SAME");
+    //graphFC->Draw("P SAME");
+    graphBlue->Draw("P SAME"); // "AP"는 축(Axis)과 점(Points)을 의미함
+
+    can2 -> SaveAs("figure_field.png");
+    can2 -> SaveAs("figure_field.root");
+    app.Run(kTRUE);
+    return 0;
 
     ///////////////////////////////////////////////////////////////////////// Drawing cell and drift. moved and modfied by S. Bae 240124
     TCanvas* can = new TCanvas("can","",1600,1600);
@@ -222,24 +246,11 @@ int main(int argc, char * argv[])
     }
 
     driftView.Plot(true, false);
+    can -> SaveAs("figure_drift_electon.png");
 
     fnew->WriteTObject(tr);	//Added by S. Bae 240124
     fnew->Print();			//Added by S. Bae 240124
     fnew->Close();			//Added by S. Bae 240124
-
-    ViewField fieldView;
-    fieldView.SetComponent(&cmp);
-    fieldView.SetPlane(0, 0, 1, 0, 0, 0);
-    fieldView.SetArea(-5, -15, -15, 25, 2, 5);
-    fieldView.SetVoltageRange(-1600.,200.);
-
-    TCanvas* can2 = new TCanvas("can2", "", 600, 600);
-    can2->SetLeftMargin(0.16);
-    fieldView.SetCanvas(can2);
-    fieldView.PlotContour();
-
-    can -> SaveAs("figure_drift_electon.png");
-    can2 -> SaveAs("figure_field.png");
 
     app.Run(kTRUE);
     return 0;

@@ -11,3 +11,6 @@ link_directories(${ROOT_LIBRARY_DIR})
 
 add_executable(texat_gas_simulation texat_gas_simulation.cc)
 target_link_libraries(texat_gas_simulation Garfield::Garfield ${ROOT_LIBRARIES})
+
+add_executable(draw_field draw_field.cc)
+target_link_libraries(draw_field Garfield::Garfield ${ROOT_LIBRARIES})
