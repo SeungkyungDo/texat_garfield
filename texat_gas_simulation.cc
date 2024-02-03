@@ -8,14 +8,14 @@
 #include <TFile.h>
 #include <TGraph.h>
 #include <TTree.h>
-
+#include "TF2.h"
+#include "TH2D.h"
 #include <TApplication.h>
 
 #include "Garfield/ViewCell.hh"
 #include "Garfield/ViewDrift.hh"
 #include "Garfield/ViewSignal.hh"
 #include "Garfield/ViewField.hh"
-
 #include "Garfield/ComponentAnalyticField.hh"
 #include "Garfield/MediumMagboltz.hh"
 #include "Garfield/Sensor.hh"
@@ -28,19 +28,97 @@
 using namespace Garfield;
 using namespace std;
 
+class WireSet
+{
+    public:
+        TString name;
+        int n=0, mstyle=20, mcolor=kBlack, lcolor=kBlack;
+        double x0=0, pitch=0, v=0, y=0, r=0;
+        TGraph* graph = nullptr;
+
+        //////////////////////////////////////////////////////////////////////////////
+        WireSet(TString name_, int n_, double x0_, double pitch_, double v_, double y_, double r_, int mstyle_=20, int mcolor_=kBlack, int lcolor_=kBlack)
+        : name(name_), n(n_), x0(x0_), pitch(pitch_), v(v_), y(y_), r(r_), mstyle(mstyle_), mcolor(mcolor_), lcolor(lcolor_) {
+            graph = new TGraph();
+            graph -> SetMarkerStyle(mstyle);
+            graph -> SetMarkerColor(mcolor);
+        }
+
+        ~WireSet() {}
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateWires(ComponentAnalyticField &cmp) {
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                cmp.AddWire(x, y, 2*r, v, name.Data());
+                graph -> SetPoint(i,x,y);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateAndDrawFieldValueGraph(TF2 *f2, bool drawFrame, int nTest=100, double testRange=0.25) {
+            if (drawFrame) {
+                auto frame = new TH2D(name+"_v",";Offset dx from wire center [cm];Field value (V)",nTest,0,testRange,100,(v>0? -1.5*v:1.5*v),(v>0?1.5*v:-1.5*v));
+                frame -> SetStats(0);
+                frame -> Draw();
+            }
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                auto graph1 = new TGraph();
+                graph1 -> SetLineColor(lcolor);
+                for (double dx=0.; dx<testRange; dx+=testRange/nTest)
+                    graph1->SetPoint(graph1->GetN(),dx,f2->Eval(x+dx,y));
+                graph1 -> Draw("samel");
+            }
+        }
+};
+
 int main(int argc, char * argv[])
 {
-    const int nElectrons = 1;
-    const double xSpacing = 2.0;
+    if (argc<2) {
+        cout << "== Input should be given 1) number of electrons in each point, 2) spacing between electron simulation starting point!" << endl;
+        cout << "   ex) ./texat_gas_simulation 10 0.5" << endl;
+        return 0;
+    }
+
+    int numElSim = std::atoi(argv[1]);
+    double xSpacing = std::atof(argv[2]);
     const double xMin = 0.;
     const double xMax = 20.;
+    cout << numElSim << " " << xSpacing << " " << xMin << " " << xMax << endl;
 
-    //const int nElectrons = 100;
-    //const double xSpacing = 0.01;
-    //const double xMin = 0.;
-    //const double xMax = 20.;
+    bool addGG1 = true; // 0.201 -260
+    bool addGG2 = true; // 0.201 -230
+    bool addFC0 = true; // 11.265 -1600.
+    bool addGEM = true; // 0 230
+
+    int dxCvs = 1600;
+    int dyCvs = 1200;
+
+    double vRange1 = -1600.;
+    double vRange2 = 300.;
+    double x1 = 0;
+    double x2 = 20;
+    double y1 = -12;
+    double y2 = 1;
+    double z1 = -15;
+    double z2 = 5;
+    double fieldValueHistSpacing = 0.01;
+
+    double y0Sim = -5.;
+    double z0Sim = 0.;
+
+    TString nameSet;
+    int n, mstyle, mcolor, lcolor;
+    double x0, pitch, v, y, r;
+    WireSet wireFC0(nameSet="FC0", n=41, x0=0,    pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
+    WireSet wireGG1(nameSet="GG1", n=41, x0=0.00, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
+    WireSet wireGG2(nameSet="GG2", n= 8, x0=7.75, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed  );
+
+    const double vMMGEM = 230.;
 
     TApplication app("app", &argc, argv);
+
     // Setup the gas mixture and the corresponding file.
     MediumMagboltz gas("he4", 90., "co2", 10.);
     gas.SetTemperature(293.15);
@@ -56,99 +134,18 @@ int main(int argc, char * argv[])
     // Load the field map.
     // cmp.LoadElectricField("TexAT_v2_field.els", "mm");
 
-    // Wire radius [cm]
-    const double rWire = 0.005;
-    const double rWireFC = 0.005;
-    const double Wirepitch = 0.5;
-    const double WireFCpitch = 0.5;
-    const double GGGap = 0.201;
-    const double FCGap = 11.265;
+    /////////////////////////////////////////////////////////////////////////
+    if (addFC0) wireFC0.CreateWires(cmp);
+    if (addGG1) wireGG1.CreateWires(cmp);
+    if (addGG2) wireGG2.CreateWires(cmp);
+    if (addGEM) cmp.AddPlaneY(0,vMMGEM,"MMGEM");
 
-    const double vMMGEM = 230.;
-    const double vGG_Black = -260.;
-    const double vGG_Blue = -230.;
-    const double vFC = -1600.;
-
-
-    // Add the wires
-    const int imax = 8;
-    //const int ifcmax = 15;
-    const int ifcmax = 41;
-    for(int i=0; i<ifcmax; i++){
-        cmp.AddWire(i*WireFCpitch,-1*0.201, 2*rWireFC, vGG_Black, "GG_black");
-        cmp.AddWire(i*WireFCpitch,-1*11.265, 2*rWireFC, vFC, "FC");
-    }
-
-    for(int i=0; i<imax; i++){
-        //cmp.AddWire(1.75+i*Wirepitch,-1*0.201, 2*rWire, vGG_Blue, "GG_blue");
-        cmp.AddWire(7.75+i*Wirepitch,-1*0.201, 2*rWire, vGG_Blue, "GG_blue");
-    }
-    cmp.AddPlaneY(0,vMMGEM,"MMGEM");
-
-    // Create a sensor.
     Sensor sensor;
     sensor.AddComponent(&cmp);
     sensor.AddElectrode(&cmp, "MMGEM");
-    sensor.SetArea(-5,-15,-15,25,2,5);
-    // Set the bounding box if necessary.
-    // cmp.SetBoundingBox(xmin, ymin, zmin, xmax, ymax, zmax);
+    sensor.SetArea(x1,y1,z1,x2,y2,z2);
 
-    // 전선 위치 데이터 설정
-    const int nWires = ifcmax + imax; // 전선의 총 개수
-    double wireX[nWires], wireY[nWires];
-
-    TGraph* graphBlack = new TGraph(ifcmax); // GG_black과 FC 전선 개수만큼
-    for (int i=0; i < ifcmax; ++i) {
-        graphBlack->SetPoint(i, i*WireFCpitch, -1*0.201); // GG_black 위치 설정
-    }
-
-    graphBlack->SetMarkerStyle(24);
-    graphBlack->SetMarkerColor(kBlack);
-
-
-    TGraph* graphFC = new TGraph(ifcmax); // GG_black과 FC 전선 개수만큼
-    for (int i=0; i < ifcmax; ++i) {
-        graphFC->SetPoint(i, i*WireFCpitch, -1*11.265); // FC 위치 설정
-    }
-
-    graphFC->SetMarkerStyle(24);
-    graphFC->SetMarkerColor(kBlack);
-
-
-    TGraph* graphBlue = new TGraph(imax); // GG_blue 전선 개수만큼
-    for (int i=0; i < imax; ++i) {
-        graphBlue->SetPoint(i, 7.75+i*Wirepitch, -1*0.201); // GG_blue 위치 설정
-    }
-
-    graphBlue->SetMarkerStyle(25);
-    //graphBlue->SetMarkerColor(kBlue);
-
-    ViewField fieldView;
-    fieldView.SetComponent(&cmp);
-    fieldView.SetPlane(0, 0, 1, 0, 0, 0);
-    //fieldView.SetArea(-5, -15, -15, 25, 2, 5);
-    //fieldView.SetVoltageRange(-1600.,200.);
-    //fieldView.SetVoltageRange(-300.,200.);
-
-    //fieldView.SetArea(5, -0.6, -15, 15, -0.1, 5);
-
-    if (1) {
-        fieldView.SetArea(0, -1, -15, 20, 0.1, 5);
-        fieldView.SetVoltageRange(-300.,0.);
-    }
-
-    TCanvas* can2 = new TCanvas("can2", "", 1600, 1200);
-    can2->SetLeftMargin(0.16);
-    fieldView.SetCanvas(can2);
-    fieldView.PlotContour();
-    graphBlack->Draw("P SAME");
-    //graphFC->Draw("P SAME");
-    graphBlue->Draw("P SAME"); // "AP"는 축(Axis)과 점(Points)을 의미함
-
-    can2 -> SaveAs("figure_field.png");
-    can2 -> SaveAs("figure_field.root");
-
-    ///////////////////////////////////////////////////////////////////////// Drawing cell and drift. moved and modfied by S. Bae 240124
+    //////////////////////////////////////////////////////////////////////////
     TCanvas* can = new TCanvas("can","",1600,1200);
     ViewCell cellView;
     cellView.SetCanvas(can);
@@ -162,15 +159,7 @@ int main(int argc, char * argv[])
     driftView.Plot2d(true,true);
     cellView.Plot2d();
 
-    graphBlack->Draw("P SAME");
-    graphFC->Draw("P SAME");
-    graphBlue->Draw("P SAME"); // "AP"는 축(Axis)과 점(Points)을 의미함
-    //app.Run(kTRUE);
-    //return true;
-
     /////////////////////////////////////////////////////////////////////////
-
-
     AvalancheMicroscopic drift;
     drift.SetSensor(&sensor);
     drift.SetCollisionSteps(400); // The number of steps for the simulation.
@@ -181,8 +170,6 @@ int main(int argc, char * argv[])
 
 
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
-
-
     double xStart, yStart, zStart, tStart, eStart;   
     double xEnd, yEnd, zEnd, tEnd, eEnd;				
     TFile* fnew =new TFile("output.root","RECREATE");
@@ -195,61 +182,37 @@ int main(int argc, char * argv[])
     tr->Branch("yEnd",&yEnd,"yEnd/D");
     tr->Branch("zEnd",&zEnd,"zEnd/D");
     tr->Branch("tEnd",&tEnd,"tEnd/D");
+
     //////////////////////////////////////////////////////////////////////
-    for (int i = 0; i < nElectrons; ++i)
+    for (int i = 0; i < numElSim; ++i)
     {
         for (double x0 = xMin; x0 < xMax; x0+=xSpacing)
         {
-            //double x0 = floor(1.0*i/nset)*0.1+7.65, y0 = -5., z0 = 0.; // Initial position of the electron. //x0 midified by S. Bae 240129
-            double y0 = -5.;
-            double z0 = 0.;
             int nElectronsCollected = 0;
-            // double sumDriftTime = 0.;
+            double t0 = 0., e0 = 0., dx0=0., dy0=0., dz0=0.;
+            drift.AvalancheElectron(x0, y0Sim, z0Sim, t0, e0, dx0, dy0, dz0);
 
-            double t0 = 0.; // Initial time.
-            double e0 = 0.;
-            double dx0=0., dy0=0., dz0=0.;
+            int numAvElectrons, numAvIons;
+            drift.GetAvalancheSize(numAvElectrons,numAvIons);
+            int numAvalanche = drift.GetNumberOfElectronEndpoints();
 
-            drift.AvalancheElectron(x0, y0, z0, t0, e0, dx0, dy0, dz0);
-            // Drift an electron from FC1 towards MM+GEM.
-
-
-            // Get the Avalanche size (It corresponding to the number or electrons)
-            int ne, ni; // Get the number of electrons and ions in the avalanche
-            drift.GetAvalancheSize(ne,ni);
-
-            int np = drift.GetNumberOfElectronEndpoints();
-
-            //std::cout<<i<< " ne: " << ne << " ni: " << ni <<std::endl;
-            //cout<<i<< " ne: " << ne << " ni: " << ni <<endl;	//commented by S. Bae 240124
-
-
-            constexpr bool twod = true;
-            constexpr bool drawaxis = false;	//changed to flase S. Bae 240124
-
-            cout << i << "/" << nElectrons << " (" << x0 << "/" << xMax << ") : #AEl = " << np << endl;
-            for (int n = 0; n < np; ++n) {
-                //  double xStart, yStart, zStart, tStart, eStart;   //commented by S. Bae 240124
-                //  double xEnd, yEnd, zEnd, tEnd, eEnd;				//commented by S. Bae 240124
+            cout << " == " << i << "/" << numElSim << " e/i=" << numAvElectrons << "/" << numAvIons << " (" << Form("%.1f",x0) << "/" << xMax << ") : #AEl = " << numAvalanche << endl;
+            //cout << i << "/" << numElSim << " (" << x0 << "/" << xMax << ") : #AEl = " << numAvalanche << endl;
+            for (int iAvalanche = 0; iAvalanche < numAvalanche; ++iAvalanche) {
                 int status;
 
-                drift.GetElectronEndpoint(n, xStart, yStart, zStart, tStart, eStart, xEnd, yEnd, zEnd, tEnd, eEnd, status);
-                // drift.GetElectronEndpoint(i, x0, y0, z0, t0, e0, dx0, dy0, dz0, xEnd, yEnd, zEnd, tEnd, eEnd, dxEnd, dyEnd, dzEnd, status);
+                drift.GetElectronEndpoint(iAvalanche, xStart, yStart, zStart, tStart, eStart, xEnd, yEnd, zEnd, tEnd, eEnd, status);
 
-                if (std::abs(yEnd) < 0.1) {
+                if (std::abs(yEnd) < 0.1)
                     nElectronsCollected++;
-                }
 
                 tr->Fill();
-                //driftView.Plot(twod, drawaxis);				//Added by S. Bae 240124
-                                                            //std::cout<< status << " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<std::endl;	//commented by S. Bae
-                                                            //cout<< status <<  " start: " << xStart << " " << yStart << " " << zStart << " end: " << xEnd << yEnd << zEnd <<endl;	//commented by S. Bae
             }
         }
     }
 
     driftView.Plot(true, false);
-    can -> SaveAs("figure_drift_electon.png");
+    can -> SaveAs("drift_electron.png");
 
     fnew->WriteTObject(tr);	//Added by S. Bae 240124
     fnew->Print();			//Added by S. Bae 240124

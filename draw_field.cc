@@ -58,7 +58,7 @@ class WireSet
         //////////////////////////////////////////////////////////////////////////////
         void CreateAndDrawFieldValueGraph(TF2 *f2, bool drawFrame, int nTest=100, double testRange=0.25) {
             if (drawFrame) {
-                auto frame = new TH2D(name+"_v",";Offset dx from wire center (mm?);Field value (V)",nTest,0,testRange,100,(v>0? -1.5*v:1.5*v),(v>0?1.5*v:-1.5*v));
+                auto frame = new TH2D(name+"_v",";Offset dx from wire center [cm];Field value (V)",nTest,0,testRange,100,(v>0? -1.5*v:1.5*v),(v>0?1.5*v:-1.5*v));
                 frame -> SetStats(0);
                 frame -> Draw();
             }
@@ -75,12 +75,16 @@ class WireSet
 
 int main(int argc, char * argv[])
 {
-    bool zoom1 = true;
+    bool zoom_option1 = true;
+    bool zoom_option2 = false;
 
     bool addGG1 = true; // 0.201 -260
     bool addGG2 = true; // 0.201 -230
     bool addFC0 = true; // 11.265 -1600.
     bool addGEM = true; // 0 230
+
+    int dxCvs = 1600;
+    int dyCvs = 1200;
 
     double vRange1 = -1600.;
     double vRange2 = 300.;
@@ -94,8 +98,7 @@ int main(int argc, char * argv[])
     double zoomx2 = x2;
     double zoomy1 = y1;
     double zoomy2 = y2;
-
-    const double vMMGEM = 230.;
+    double fieldValueHistSpacing = 0.01;
 
     TString nameSet;
     int n, mstyle, mcolor, lcolor;
@@ -104,7 +107,9 @@ int main(int argc, char * argv[])
     WireSet wireGG1(nameSet="GG1", n=41, x0=0.00, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
     WireSet wireGG2(nameSet="GG2", n= 8, x0=7.75, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed  );
 
-    if (zoom1) {
+    const double vMMGEM = 230.;
+
+    if (zoom_option1) {
         vRange1 = -300;
         vRange2 = 300;
         y1 = -1;
@@ -114,16 +119,36 @@ int main(int argc, char * argv[])
         zoomy1 = y1;
         zoomy2 = y2;
     }
+    else if (zoom_option2) {
+        vRange1 = -300;
+        vRange2 = -100;
+        y1 = -0.5;
+        y2 = 0.1;
+        zoomx1 = 6;
+        zoomx2 = 9;
+        zoomy1 = y1;
+        zoomy2 = y2;
+    }
 
     TApplication app("app", &argc, argv);
 
+    /////////////////////////////////////////////////////////////////////////
+    // Setup the gas mixture and the corresponding file.
     MediumMagboltz gas("he4", 90., "co2", 10.);
     gas.SetTemperature(293.15);
     gas.SetPressure(760.*0.39);
+    // This file needs to be created with the correct gas mixture and conditions.
+    //gas.LoadGasFile("he4_co2_p39_r10_Drift.gas");
 
+    // Setup the component for the TexAT_v2 structure.
+    // Assuming the field configuration is already set in a file named "TexAT_v2_field.els"
+    // and the geometry in "TexAT_v2_geometry.txt".
     ComponentAnalyticField cmp;
     cmp.SetMedium(&gas);
+    // Load the field map.
+    // cmp.LoadElectricField("TexAT_v2_field.els", "mm");
 
+    /////////////////////////////////////////////////////////////////////////
     if (addFC0) wireFC0.CreateWires(cmp);
     if (addGG1) wireGG1.CreateWires(cmp);
     if (addGG2) wireGG2.CreateWires(cmp);
@@ -140,37 +165,66 @@ int main(int argc, char * argv[])
     fieldView.SetArea(x1,y1,z1,x2,y2,z2);
     fieldView.SetVoltageRange(vRange1,vRange2);
 
-    TCanvas* cvsFieldContour = new TCanvas("cvsFieldContour", "", 1600, 1200);
-    cvsFieldContour -> SetLeftMargin(0.16);
-    fieldView.SetCanvas(cvsFieldContour);
+    //////////////////////////////////////////////////////////////////////////
+    TCanvas *cvs = nullptr;
+    TString name0 = "";
+    TString nameTag = "";
+    if (zoom_option1) nameTag = nameTag + "_zoom1";
+    else if (zoom_option2) nameTag = nameTag + "_zoom2";
+    if (addGEM && addGG1 && addGG2 && addFC0) ;
+    else {
+        if (addGEM) nameTag = nameTag + "_GEM";
+        if (addGG1) nameTag = nameTag + "_GG1";
+        if (addGG2) nameTag = nameTag + "_GG2";
+        if (addFC0) nameTag = nameTag + "_FC0";
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    name0 = "field_contour";
+    cvs = new TCanvas(name0, "", dxCvs, dyCvs);
+    cvs -> SetLeftMargin(0.16);
+    fieldView.SetCanvas(cvs);
     fieldView.PlotContour();
     if (addGG1) wireGG1.graph -> Draw("P SAME");
     if (addGG2) wireGG2.graph -> Draw("P SAME");
     if (addFC0) wireFC0.graph -> Draw("P SAME");
-
-    TString name0 = "";
-    if (addGEM) name0 = name0 + "_GEM";
-    if (addGG1) name0 = name0 + "_GG1";
-    if (addGG2) name0 = name0 + "_GG2";
-    if (addFC0) name0 = name0 + "_FC0";
-    TString nameFieldContour = TString("cvs_field_contour") + name0;
-    TString nameFieldContourR = TString("r")+nameFieldContour;
-    TString nameFieldValue = TString("cvs_field_value") + name0;
-    TString nameFieldValueR = TString("r")+nameFieldContour;
-
-    auto f2 = (TF2*) cvsFieldContour -> GetListOfPrimitives() -> FindObject("f2D_0");
+    auto f2 = (TF2*) cvs -> GetListOfPrimitives() -> FindObject("f2D_0");
     auto hist = f2 -> GetHistogram();
     hist -> GetXaxis() -> SetRangeUser(zoomx1,zoomx2);
     hist -> GetYaxis() -> SetRangeUser(zoomy1,zoomy2);
+    cvs -> SaveAs(Form("figure_%s%s.png", name0.Data(),nameTag.Data()));
+    cvs -> SaveAs(Form("figure_%s%s.root",name0.Data(),nameTag.Data()));
 
-    cvsFieldContour -> SaveAs(nameFieldContour+".png");
-    cvsFieldContour -> SaveAs(nameFieldContourR+".root");
-
-    TCanvas* cvsVoltage = new TCanvas("cvsVoltage", "", 1600, 1200);
+    //////////////////////////////////////////////////////////////////////////
+    name0 = "field_value";
+    cvs = new TCanvas(name0, "", dxCvs, dyCvs);
     wireGG1.CreateAndDrawFieldValueGraph(f2,true);
     wireGG2.CreateAndDrawFieldValueGraph(f2,false);
-    cvsVoltage -> SaveAs(nameFieldValue+".png");
-    cvsVoltage -> SaveAs(nameFieldValueR+".root");
+    cvs -> SaveAs(Form("figure_%s%s.png", name0.Data(),nameTag.Data()));
+    cvs -> SaveAs(Form("figure_%s%s.root",name0.Data(),nameTag.Data()));
+
+    //////////////////////////////////////////////////////////////////////////
+    name0 = "field_voltage2D";
+    cvs = new TCanvas(name0, "", dxCvs, dyCvs);
+    int nx = (zoomx2-zoomx1)/fieldValueHistSpacing;
+    int ny = (zoomy2-zoomy1)/fieldValueHistSpacing;
+    cout << "nxy: " << nx << ", " << ny << endl;
+    cvs -> SetMargin(0.12,0.16,0.12,0.06);
+    //cvs -> SetGrid(0,0);
+    auto histVoltage2D = new TH2D("histVoltage2D",";x [cm];y [cm]; Field value",nx,zoomx1,zoomx2,ny,zoomy1,zoomy2);
+    histVoltage2D -> SetStats(0);
+    histVoltage2D -> GetZaxis() -> SetTitleOffset(1.25);
+    histVoltage2D -> SetMinimum(vRange1);
+    histVoltage2D -> SetMaximum(vRange2);
+    for (double xBin=zoomx1; xBin<zoomx2; xBin+=fieldValueHistSpacing)
+        for (double yBin=zoomy1; yBin<zoomy2; yBin+=fieldValueHistSpacing)
+            histVoltage2D -> Fill(xBin,yBin,f2->Eval(xBin,yBin));
+    histVoltage2D -> Draw("colz");
+    if (addGG1) wireGG1.graph -> Draw("P SAME");
+    if (addGG2) wireGG2.graph -> Draw("P SAME");
+    if (addFC0) wireFC0.graph -> Draw("P SAME");
+    cvs -> SaveAs(Form("figure_%s%s.png", name0.Data(),nameTag.Data()));
+    cvs -> SaveAs(Form("figure_%s%s.root",name0.Data(),nameTag.Data()));
 
     app.Run(kTRUE);
     return 0;
