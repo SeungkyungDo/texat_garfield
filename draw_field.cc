@@ -9,14 +9,13 @@
 #include <TGraph.h>
 #include <TTree.h>
 #include "TF2.h"
-
+#include "TH2D.h"
 #include <TApplication.h>
 
 #include "Garfield/ViewCell.hh"
 #include "Garfield/ViewDrift.hh"
 #include "Garfield/ViewSignal.hh"
 #include "Garfield/ViewField.hh"
-
 #include "Garfield/ComponentAnalyticField.hh"
 #include "Garfield/MediumMagboltz.hh"
 #include "Garfield/Sensor.hh"
@@ -29,16 +28,61 @@
 using namespace Garfield;
 using namespace std;
 
+class WireSet
+{
+    public:
+        TString name;
+        int n=0, mstyle=20, mcolor=kBlack, lcolor=kBlack;
+        double x0=0, pitch=0, v=0, y=0, r=0;
+        TGraph* graph = nullptr;
+
+        //////////////////////////////////////////////////////////////////////////////
+        WireSet(TString name_, int n_, double x0_, double pitch_, double v_, double y_, double r_, int mstyle_=20, int mcolor_=kBlack, int lcolor_=kBlack)
+        : name(name_), n(n_), x0(x0_), pitch(pitch_), v(v_), y(y_), r(r_), mstyle(mstyle_), mcolor(mcolor_), lcolor(lcolor_) {
+            graph = new TGraph();
+            graph -> SetMarkerStyle(mstyle);
+            graph -> SetMarkerColor(mcolor);
+        }
+
+        ~WireSet() {}
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateWires(ComponentAnalyticField &cmp) {
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                cmp.AddWire(x, y, 2*r, v, name.Data());
+                graph -> SetPoint(i,x,y);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateAndDrawFieldValueGraph(TF2 *f2, bool drawFrame, int nTest=100, double testRange=0.25) {
+            if (drawFrame) {
+                auto frame = new TH2D(name+"_v",";Offset dx from wire center (mm?);Field value (V)",nTest,0,testRange,100,(v>0? -1.5*v:1.5*v),(v>0?1.5*v:-1.5*v));
+                frame -> SetStats(0);
+                frame -> Draw();
+            }
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                auto graph1 = new TGraph();
+                graph1 -> SetLineColor(lcolor);
+                for (double dx=0.; dx<testRange; dx+=testRange/nTest)
+                    graph1->SetPoint(graph1->GetN(),dx,f2->Eval(x+dx,y));
+                graph1 -> Draw("samel");
+            }
+        }
+};
+
 int main(int argc, char * argv[])
 {
-    bool zoom1 = false;
+    bool zoom1 = true;
 
     bool addGG1 = true; // 0.201 -260
     bool addGG2 = true; // 0.201 -230
     bool addFC0 = true; // 11.265 -1600.
     bool addGEM = true; // 0 230
-    //double vRange1 = -1600.;
-    double vRange1 = -300.;
+
+    double vRange1 = -1600.;
     double vRange2 = 300.;
     double x1 = 0;
     double x2 = 20;
@@ -53,26 +97,12 @@ int main(int argc, char * argv[])
 
     const double vMMGEM = 230.;
 
-    const int numFC0 = 41;
-    const double vFC0 = -1600.;
-    const double yFC0 = -11.265;
-    const double offFC0 = 0;
-    const double rWireFC0 = 0.005;
-    const double wirePitchFC0 = 0.5;
-
-    const int numGG1 = 41;
-    const double vGG1 = -260.;
-    const double yGG1 = -0.201;
-    const double offGG1 = 0.00;
-    const double rWireGG1 = 0.005;
-    const double wirePitchGG1 = 0.5;
-
-    const int numGG2 = 8;
-    const double vGG2 = -230.;
-    const double yGG2 = -0.201;
-    const double offGG2 = 7.75;
-    const double rWireGG2 = 0.005;
-    const double wirePitchGG2 = 0.5;
+    TString nameSet;
+    int n, mstyle, mcolor, lcolor;
+    double x0, pitch, v, y, r;
+    WireSet wireFC0(nameSet="FC0", n=41, x0=0,    pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
+    WireSet wireGG1(nameSet="GG1", n=41, x0=0.00, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
+    WireSet wireGG2(nameSet="GG2", n= 8, x0=7.75, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed  );
 
     if (zoom1) {
         vRange1 = -300;
@@ -94,40 +124,9 @@ int main(int argc, char * argv[])
     ComponentAnalyticField cmp;
     cmp.SetMedium(&gas);
 
-    TGraph* graphFC0 = new TGraph(numFC0);
-    graphFC0 -> SetMarkerStyle(26);
-    graphFC0 -> SetMarkerColor(kBlack);
-    TGraph* graphGG1 = new TGraph(numGG1);
-    graphGG1 -> SetMarkerStyle(24);
-    graphGG1 -> SetMarkerColor(kBlack);
-    TGraph* graphGG2 = new TGraph(numGG2);
-    graphGG2 -> SetMarkerStyle(25);
-    graphGG2 -> SetMarkerColor(kRed);
-
-    if (addFC0) {
-        for(int i=0; i<numFC0; i++) {
-            auto x = offFC0+i*wirePitchFC0;
-            cmp.AddWire(x,yFC0, offFC0+2*rWireFC0, vFC0, "FC0");
-            graphFC0 -> SetPoint(i,x,yFC0);
-        }
-    }
-
-    if (addGG1) {
-        for(int i=0; i<numGG1; i++) {
-            auto x = offGG1+i*wirePitchGG1;
-            cmp.AddWire(x,yGG1, 2*rWireGG1, vGG1, "GG1");
-            graphGG1 -> SetPoint(i,x,yGG1);
-        }
-    }
-
-    if (addGG2) {
-        for(int i=0; i<numGG2; i++) {
-            auto x = offGG2+i*wirePitchGG2;
-            cmp.AddWire(x,yGG2, 2*rWireGG2, vGG2, "GG2");
-            graphGG2 -> SetPoint(i,x,yGG2);
-        }
-    }
-
+    if (addFC0) wireFC0.CreateWires(cmp);
+    if (addGG1) wireGG1.CreateWires(cmp);
+    if (addGG2) wireGG2.CreateWires(cmp);
     if (addGEM) cmp.AddPlaneY(0,vMMGEM,"MMGEM");
 
     Sensor sensor;
@@ -141,29 +140,37 @@ int main(int argc, char * argv[])
     fieldView.SetArea(x1,y1,z1,x2,y2,z2);
     fieldView.SetVoltageRange(vRange1,vRange2);
 
-    TCanvas* cvsField = new TCanvas("field", "", 1600, 1200);
-    cvsField -> SetLeftMargin(0.16);
-    fieldView.SetCanvas(cvsField);
+    TCanvas* cvsFieldContour = new TCanvas("cvsFieldContour", "", 1600, 1200);
+    cvsFieldContour -> SetLeftMargin(0.16);
+    fieldView.SetCanvas(cvsFieldContour);
     fieldView.PlotContour();
-    graphGG1 -> Draw("P SAME");
-    if (addGG2) graphGG2 -> Draw("P SAME");
-    if (addFC0) graphFC0 -> Draw("P SAME");
+    if (addGG1) wireGG1.graph -> Draw("P SAME");
+    if (addGG2) wireGG2.graph -> Draw("P SAME");
+    if (addFC0) wireFC0.graph -> Draw("P SAME");
 
-    TString name = "field";
-    if (addGEM) name = name + "_GEM";
-    if (addGG1) name = name + "_GG1";
-    if (addGG2) name = name + "_GG2";
-    if (addFC0) name = name + "_FC0";
-    TString nameRoot = TString("rcvs_") + name;
-    TString nameCvs = TString("cvs_") + name;
-    TString nameHist = name;
+    TString name0 = "";
+    if (addGEM) name0 = name0 + "_GEM";
+    if (addGG1) name0 = name0 + "_GG1";
+    if (addGG2) name0 = name0 + "_GG2";
+    if (addFC0) name0 = name0 + "_FC0";
+    TString nameFieldContour = TString("cvs_field_contour") + name0;
+    TString nameFieldContourR = TString("r")+nameFieldContour;
+    TString nameFieldValue = TString("cvs_field_value") + name0;
+    TString nameFieldValueR = TString("r")+nameFieldContour;
 
-    auto f2 = (TF2*) cvsField -> GetListOfPrimitives() -> FindObject("f2D_0");
+    auto f2 = (TF2*) cvsFieldContour -> GetListOfPrimitives() -> FindObject("f2D_0");
     auto hist = f2 -> GetHistogram();
     hist -> GetXaxis() -> SetRangeUser(zoomx1,zoomx2);
     hist -> GetYaxis() -> SetRangeUser(zoomy1,zoomy2);
-    cvsField -> SaveAs(nameCvs+".png");
-    cvsField -> SaveAs(nameRoot+".root");
+
+    cvsFieldContour -> SaveAs(nameFieldContour+".png");
+    cvsFieldContour -> SaveAs(nameFieldContourR+".root");
+
+    TCanvas* cvsVoltage = new TCanvas("cvsVoltage", "", 1600, 1200);
+    wireGG1.CreateAndDrawFieldValueGraph(f2,true);
+    wireGG2.CreateAndDrawFieldValueGraph(f2,false);
+    cvsVoltage -> SaveAs(nameFieldValue+".png");
+    cvsVoltage -> SaveAs(nameFieldValueR+".root");
 
     app.Run(kTRUE);
     return 0;

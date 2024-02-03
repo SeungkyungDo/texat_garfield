@@ -31,9 +31,14 @@ using namespace std;
 int main(int argc, char * argv[])
 {
     const int nElectrons = 1;
-    const double xSpacing = 0.5;
-    const double xMin = 7.;
-    const double xMax = 12.;
+    const double xSpacing = 2.0;
+    const double xMin = 0.;
+    const double xMax = 20.;
+
+    //const int nElectrons = 100;
+    //const double xSpacing = 0.01;
+    //const double xMin = 0.;
+    //const double xMax = 20.;
 
     TApplication app("app", &argc, argv);
     // Setup the gas mixture and the corresponding file.
@@ -132,7 +137,7 @@ int main(int argc, char * argv[])
         fieldView.SetVoltageRange(-300.,0.);
     }
 
-    TCanvas* can2 = new TCanvas("can2", "", 2600, 1600);
+    TCanvas* can2 = new TCanvas("can2", "", 1600, 1200);
     can2->SetLeftMargin(0.16);
     fieldView.SetCanvas(can2);
     fieldView.PlotContour();
@@ -142,11 +147,9 @@ int main(int argc, char * argv[])
 
     can2 -> SaveAs("figure_field.png");
     can2 -> SaveAs("figure_field.root");
-    app.Run(kTRUE);
-    return 0;
 
     ///////////////////////////////////////////////////////////////////////// Drawing cell and drift. moved and modfied by S. Bae 240124
-    TCanvas* can = new TCanvas("can","",1600,1600);
+    TCanvas* can = new TCanvas("can","",1600,1200);
     ViewCell cellView;
     cellView.SetCanvas(can);
     cellView.SetComponent(&cmp);
