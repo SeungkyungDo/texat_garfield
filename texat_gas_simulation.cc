@@ -126,7 +126,7 @@ int main(int argc, char * argv[])
 
     const double vMMGEM = 230.;
 
-    TApplication app("app", &argc, argv);
+    //TApplication app("app", &argc, argv);
 
     // Setup the gas mixture and the corresponding file.
     MediumMagboltz gas("he4", 90., "co2", 10.);
@@ -180,7 +180,7 @@ int main(int argc, char * argv[])
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
     double xStart, yStart, zStart, tStart, eStart;   
     double xEnd, yEnd, zEnd, tEnd, eEnd;				
-    TFile* fnew = new TFile(Form("output_%d_%d_%.1f_%.1f.root",numElSim,numPoints,xMin,xMax),"RECREATE");
+    TFile* fnew = new TFile(Form("output_%d_%d_%.2f_%.2f.root",numElSim,numPoints,xMin,xMax),"RECREATE");
     TTree* tree = new TTree("gg","");
     tree -> Branch("xStart",&xStart,"xStart/D");
     tree -> Branch("yStart",&yStart,"yStart/D");
@@ -220,12 +220,12 @@ int main(int argc, char * argv[])
     }
 
     driftView.Plot(true, false);
-    can -> SaveAs("figure_drift_electron.png");
+    can -> SaveAs(Form("figure_gas_sim_%d_%d_%.2f_%.2f.png",numElSim,numPoints,xMin,xMax));
 
     fnew -> WriteTObject(tree);	//Added by S. Bae 240124
     fnew -> Print();			//Added by S. Bae 240124
     fnew -> Close();			//Added by S. Bae 240124
 
-    app.Run(kTRUE);
+    //app.Run(kTRUE);
     return 0;
 }
