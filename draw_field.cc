@@ -25,53 +25,10 @@
 #include "Garfield/AvalancheMicroscopic.hh"
 #include "Garfield/AvalancheMC.hh"
 
+#include "WireSet.h"
+
 using namespace Garfield;
 using namespace std;
-
-class WireSet
-{
-    public:
-        TString name;
-        int n=0, mstyle=20, mcolor=kBlack, lcolor=kBlack;
-        double x0=0, pitch=0, v=0, y=0, r=0;
-        TGraph* graph = nullptr;
-
-        //////////////////////////////////////////////////////////////////////////////
-        WireSet(TString name_, int n_, double x0_, double pitch_, double v_, double y_, double r_, int mstyle_=20, int mcolor_=kBlack, int lcolor_=kBlack)
-        : name(name_), n(n_), x0(x0_), pitch(pitch_), v(v_), y(y_), r(r_), mstyle(mstyle_), mcolor(mcolor_), lcolor(lcolor_) {
-            graph = new TGraph();
-            graph -> SetMarkerStyle(mstyle);
-            graph -> SetMarkerColor(mcolor);
-        }
-
-        ~WireSet() {}
-
-        //////////////////////////////////////////////////////////////////////////////
-        void CreateWires(ComponentAnalyticField &cmp) {
-            for(int i=0; i<n; i++) {
-                auto x = x0+i*pitch;
-                cmp.AddWire(x, y, 2*r, v, name.Data());
-                graph -> SetPoint(i,x,y);
-            }
-        }
-
-        //////////////////////////////////////////////////////////////////////////////
-        void CreateAndDrawFieldValueGraph(TF2 *f2, bool drawFrame, int nTest=100, double testRange=0.25) {
-            if (drawFrame) {
-                auto frame = new TH2D(name+"_v",";Offset dx from wire center [cm];Field value (V)",nTest,0,testRange,100,(v>0? -1.5*v:1.5*v),(v>0?1.5*v:-1.5*v));
-                frame -> SetStats(0);
-                frame -> Draw();
-            }
-            for(int i=0; i<n; i++) {
-                auto x = x0+i*pitch;
-                auto graph1 = new TGraph();
-                graph1 -> SetLineColor(lcolor);
-                for (double dx=0.; dx<testRange; dx+=testRange/nTest)
-                    graph1->SetPoint(graph1->GetN(),dx,f2->Eval(x+dx,y));
-                graph1 -> Draw("samel");
-            }
-        }
-};
 
 int main(int argc, char * argv[])
 {
@@ -88,8 +45,8 @@ int main(int argc, char * argv[])
 
     double vRange1 = -1600.;
     double vRange2 = 300.;
-    double x1 = 0;
-    double x2 = 20;
+    double x1 = -11;
+    double x2 = 11;
     double y1 = -12;
     double y2 = 1;
     double z1 = -15;
@@ -103,25 +60,28 @@ int main(int argc, char * argv[])
     TString nameSet;
     int n, mstyle, mcolor, lcolor;
     double x0, pitch, v, y, r;
-    WireSet wireFC0(nameSet="FC0", n=41, x0=0,    pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
-    WireSet wireGG1(nameSet="GG1", n=41, x0=0.00, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
-    WireSet wireGG2(nameSet="GG2", n= 8, x0=7.75, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed  );
+    int n1 = 101;
+    int n2 = 8;
+    WireSet wireFC0(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
+    WireSet wireGG1(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
+    WireSet wireGG2(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed  );
 
-    const double vMMGEM = 230.;
+    //const double vMMGEM = 230.;
+    const double vMMGEM = 0.;
 
     if (zoom_option1) {
         vRange1 = -300;
-        vRange2 = 300;
+        vRange2 = 0;
         y1 = -1;
         y2 = 0.1;
-        zoomx1 = 6;
-        zoomx2 = 11;
+        zoomx1 = -5;
+        zoomx2 = 0;
         zoomy1 = y1;
         zoomy2 = y2;
     }
     else if (zoom_option2) {
         vRange1 = -300;
-        vRange2 = -100;
+        vRange2 = 0;
         y1 = -0.5;
         y2 = 0.1;
         zoomx1 = 6;
