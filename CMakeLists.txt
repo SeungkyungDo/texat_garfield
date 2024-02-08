@@ -15,4 +15,4 @@ target_link_libraries(texat_gas_simulation Garfield::Garfield ${ROOT_LIBRARIES})
 add_executable(draw_field draw_field.cc WireSet.h)
 target_link_libraries(draw_field Garfield::Garfield ${ROOT_LIBRARIES})
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/make_condor.py DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/)
+#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/make_condor.py DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/)
