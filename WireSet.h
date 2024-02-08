@@ -101,7 +101,7 @@ class TexatConfiguration
             //fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
             fWireFC0.SetPar(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.-3.4, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
             fWireGG1.SetPar(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-3.4,     r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
-            fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-100,  y=-3.4,     r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
+            fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-3.4,     r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
             for (auto wireSet : {fWireFC0,fWireGG1,fWireGG2}) {
                 if (xMin>wireSet.xMin) xMin = wireSet.xMin;
                 if (xMax<wireSet.xMax) xMax = wireSet.xMax;
