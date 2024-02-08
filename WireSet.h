@@ -6,9 +6,12 @@
 using namespace Garfield;
 #endif
 
+#include <iostream>
 #include "TString.h"
 #include "TGraph.h"
 #include "TF2.h"
+
+using namespace std;
 
 class WireSet
 {

@@ -36,7 +36,7 @@ int main(int argc, char * argv[])
 
     TexatConfiguration conf;
 
-    bool saveFigures = false;
+    bool saveFigures = true;
     int dxCvs = 1200;
     int dyCvs = 800;
     //double vRange1 = -400;//conf.fWireGG1.v;
