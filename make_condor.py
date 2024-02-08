@@ -2,32 +2,24 @@ import os
 
 submit_all = open("ss_all.sh","w");
 
-#ne = 1
-#nx = 2
-#dx = 1
-#xMin = 0.
-#xMax = 20.
-ne = 100
-nx = 100
-dx = 0.01
+num_electrons = 100
+num_bins = 1000
 xMin = -10.
 xMax = 10.
 name = "submit_tgs"
 input_path_list = ""
-executable_name = "texat_gas_simulation"
+executable_name = "texat_gas_simulation.exe"
 
 init_dir = f"{os.getcwd()}/condor"
 os.makedirs(init_dir, exist_ok=True)
 
-for i in range(0,nx):
+for i in range(0,num_bins):
     submit_file_name = f"{init_dir}/{name}_{i}.sh"
     submit_file = open(submit_file_name,"w");
-    x1 = xMin+xMax/nx*i
-    x2 = xMin+xMax/nx*(i+1)
 
     content = f"""#
 Executable     = {executable_name}
-Arguments      = {ne} {dx} {x1} {x2} -b -q
+Arguments      = {i} {num_electrons} {num_bins} {xMin} {xMax} 0
 Universe       = vanilla
 GetEnv         = True
 Request_cpus   = 1

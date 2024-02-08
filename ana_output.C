@@ -1,12 +1,13 @@
 #define NOGARFIELD
-#include "WireSet.h"
+#include "DetectorConfiguration.h"
 
-void read_output()
+void ana_output()
 {
     TexatConfiguration conf;
-    conf.CreateComponents(10);
+    double userYPosition = 10;
+    conf.CreateComponents(userYPosition);
 
-    auto file = new TFile("build/output_1000_1_-3.00_3.00__0.root");
+    auto file = new TFile("data/output_1000_1_-3.00_3.00__0.root");
     auto tree = (TTree*) file -> Get("gg");
 
     double padGapChain = 0;
@@ -36,8 +37,8 @@ void read_output()
 
     //TH1D (const char *name, const char *title, Int_t nbinsx, const Double_t *xbins)
     auto histStart0    = new TH1D("histStart0" ,"(All) Equal size binning;x (cm)",40,-3,3);
-    auto histStart     = new TH1D("histStart" ,"(All) Real pad size binning;x (cm)",numBins,xbins);
-    auto histAbsorbed  = new TH1D("histAbsorbed" ,"(Absorbed by wires) Real pad size binning;x (cm)",100,-3,3);
+    auto histStart     = new TH1D("histStart" ,"(All) Equal pad size binning;x (cm)",numBins,xbins);
+    auto histAbsorbed  = new TH1D("histAbsorbed" ,"(Absorbed by wires);x (cm)",100,-3,3);
     auto histCollected = new TH1D("histCollected","(Collected by pads) Real pad size binning;x (cm)",numBins,xbins);
     histStart0    -> SetMinimum(0);
     histStart     -> SetMinimum(0);
@@ -48,24 +49,26 @@ void read_output()
     histAbsorbed  -> SetFillColor(kGray);
     histCollected -> SetFillColor(kGray);
 
-    auto DrawPadBoundary = [numBins,xbins](TH1 *hist) {
+    auto DrawPadBoundary = [](TH1 *hist) {
         auto histLColor = hist -> GetLineColor();
-        for (auto iBin=1; iBin<numBins; ++iBin) {
+        auto numBins = hist -> GetXaxis() -> GetNbins();
+        for (auto iBin=1; iBin<=numBins; ++iBin) {
             auto y = hist -> GetBinContent(iBin);
-            auto line = new TLine(xbins[iBin],0,xbins[iBin],y);
+            auto x = hist -> GetXaxis() -> GetBinLowEdge(iBin);
+            auto line = new TLine(x,0,x,y);
             line -> SetLineColor(histLColor);
             line -> SetLineStyle(2);
             line -> Draw("samel");
         }
     };
 
-    auto cvs = new TCanvas("cvs","",2000,1500);
+    auto cvs = new TCanvas("cvs","",1500,1200);
     cvs -> Divide(2,2);
     TString drawOption = "";
-    cvs -> cd(1); tree -> Draw("xStart>>histStart0" ,""       ,drawOption); conf.DrawGraph();
-    cvs -> cd(2); tree -> Draw("xStart>>histStart"  ,""       ,drawOption); DrawPadBoundary(histStart    ); conf.DrawGraph();
-    cvs -> cd(3); tree -> Draw("xEnd>>histAbsorbed" ,"yEnd<-1",drawOption); conf.DrawGraph();
-    cvs -> cd(4); tree -> Draw("xEnd>>histCollected","yEnd>-1",drawOption); DrawPadBoundary(histCollected); conf.DrawGraph();
+    cvs -> cd(1); tree -> Draw("xStart>>histStart0" ,""       ,drawOption); conf.DrawWires();
+    cvs -> cd(2); tree -> Draw("xStart>>histStart"  ,""       ,drawOption); DrawPadBoundary(histStart); conf.DrawWires();
+    cvs -> cd(3); tree -> Draw("xEnd>>histAbsorbed" ,"yEnd<-1",drawOption); conf.DrawWires();
+    cvs -> cd(4); tree -> Draw("xEnd>>histCollected","yEnd>-1",drawOption); DrawPadBoundary(histCollected); conf.DrawWires();
 
     cvs -> SaveAs("figure_e_collected_and_absorbed.png");
 }

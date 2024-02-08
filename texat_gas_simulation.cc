@@ -25,7 +25,7 @@
 #include "Garfield/AvalancheMicroscopic.hh"
 #include "Garfield/AvalancheMC.hh"
 
-#include "WireSet.h"
+#include "DetectorConfiguration.h"
 
 using namespace Garfield;
 using namespace std;
@@ -54,7 +54,7 @@ int main(int argc, char * argv[])
         cout << "   4) (optional, default=" << xMaxSim      << ") x-range 2." << endl;
         cout << "   5) (optional, default=" << showFigures  << ") show simulation figure." << endl;
         cout << "   ex)" << endl;
-        cout << "      ./texat_gas_simulation 0 20 1 -2.5 2.5 1" << endl;
+        cout << "      ./texat_gas_simulation.exe 0 20 1 -2.5 2.5 1" << endl;
         return 0;
     }
 
@@ -149,7 +149,7 @@ int main(int argc, char * argv[])
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
     double xStart, yStart, zStart, tStart, eStart;   
     double xEnd, yEnd, zEnd, tEnd, eEnd;				
-    TFile* fnew = new TFile(Form("output_%s.root",tag.Data()),"RECREATE");
+    TFile* fnew = new TFile(Form("data/output_%s.root",tag.Data()),"RECREATE");
     TTree* tree = new TTree("gg","");
     tree -> Branch("xStart",&xStart,"xStart/D");
     tree -> Branch("yStart",&yStart,"yStart/D");
@@ -211,14 +211,14 @@ int main(int argc, char * argv[])
 
     if (showFigures) {
         driftView.Plot(true,false);
-        if (saveFigures) cvs -> SaveAs(Form("figure_gas_sim_%s.png",tag.Data()));
-        if (saveFigures) cvs -> SaveAs(Form("figure_gas_sim_%s.root",tag.Data()));
+        if (saveFigures) cvs -> SaveAs(Form("figures/figure_gas_sim_%s.png",tag.Data()));
+        if (saveFigures) cvs -> SaveAs(Form("figures/figure_gas_sim_%s.root",tag.Data()));
     }
 
     fnew -> WriteTObject(tree);
     fnew -> Close();
 
-    ofstream flog(Form("log_%s.txt",tag.Data()));
+    ofstream flog(Form("data/log_%s.txt",tag.Data()));
     flog << simulationIndex << endl;
     flog << numElectrons << endl;
     flog << numSimPoints << endl;

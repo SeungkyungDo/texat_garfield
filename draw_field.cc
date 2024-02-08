@@ -25,7 +25,7 @@
 #include "Garfield/AvalancheMicroscopic.hh"
 #include "Garfield/AvalancheMC.hh"
 
-#include "WireSet.h"
+#include "DetectorConfiguration.h"
 
 using namespace Garfield;
 using namespace std;
@@ -102,8 +102,8 @@ int main(int argc, char * argv[])
     auto hist = f2 -> GetHistogram();
     hist -> GetXaxis() -> SetRangeUser(zoomx1,zoomx2);
     hist -> GetYaxis() -> SetRangeUser(zoomy1,zoomy2);
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.root",name0.Data(),tag.Data()));
 
     //////////////////////////////////////////////////////////////////////////
     name0 = "field_value_x";
@@ -113,8 +113,8 @@ int main(int argc, char * argv[])
     hist_vx -> SetStats(0);
     hist_vx -> Draw();
     conf.CreateAndDrawFieldValueGraphX(f2);
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.root",name0.Data(),tag.Data()));
 
     //////////////////////////////////////////////////////////////////////////
     name0 = "field_value_y";
@@ -123,8 +123,8 @@ int main(int argc, char * argv[])
     hist_vy -> SetStats(0);
     hist_vy -> Draw();
     conf.CreateAndDrawFieldValueGraphY(f2);
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.root",name0.Data(),tag.Data()));
 
     //////////////////////////////////////////////////////////////////////////
     name0 = "field_voltage2D";
@@ -143,8 +143,8 @@ int main(int argc, char * argv[])
             histVoltage2D -> Fill(xBin,yBin,f2->Eval(xBin,yBin));
     histVoltage2D -> Draw("colz");
     conf.DrawGraph("p same");
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figures/figure_%s_%s.root",name0.Data(),tag.Data()));
 
     app.Run(kTRUE);
     return 0;

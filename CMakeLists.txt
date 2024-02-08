@@ -9,10 +9,11 @@ find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIR} ${CMAKE_SOURCE_DIR})
 link_directories(${ROOT_LIBRARY_DIR})
 
-add_executable(texat_gas_simulation texat_gas_simulation.cc WireSet.h)
-target_link_libraries(texat_gas_simulation Garfield::Garfield ${ROOT_LIBRARIES})
+message(STATUS ${CMAKE_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-add_executable(draw_field draw_field.cc WireSet.h)
-target_link_libraries(draw_field Garfield::Garfield ${ROOT_LIBRARIES})
+add_executable(texat_gas_simulation.exe texat_gas_simulation.cc DetectorConfiguration.h)
+target_link_libraries(texat_gas_simulation.exe Garfield::Garfield ${ROOT_LIBRARIES})
 
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/make_condor.py DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/)
+add_executable(draw_field.exe draw_field.cc DetectorConfiguration.h)
+target_link_libraries(draw_field.exe Garfield::Garfield ${ROOT_LIBRARIES})

@@ -1,5 +1,5 @@
-#ifndef WIRESET_HH
-#define WIRESET_HH
+#ifndef DETECTORCONFIGURATION_HH
+#define DETECTORCONFIGURATION_HH
 
 #ifndef NOGARFIELD
 #include "Garfield/ComponentAnalyticField.hh"
@@ -157,10 +157,12 @@ class TexatConfiguration
         //////////////////////////////////////////////////////////////////////////////
         void DrawGraph(TString option="psame")
         {
-            fWireGG1.graph -> Draw(option);
-            fWireGG2.graph -> Draw(option);
-            fWireFC0.graph -> Draw(option);
+            if (fWireGG1.graph->GetN()>0) fWireGG1.graph -> Draw(option);
+            if (fWireGG2.graph->GetN()>0) fWireGG2.graph -> Draw(option);
+            if (fWireFC0.graph->GetN()>0) fWireFC0.graph -> Draw(option);
         }
+
+        void DrawWires(TString option="psame") { DrawGraph(option); }
 
         //////////////////////////////////////////////////////////////////////////////
         void CreateAndDrawFieldValueGraphX(TF2 *f2)
