@@ -1,34 +1,71 @@
+#define NOGARFIELD
+#include "WireSet.h"
+
 void read_output()
 {
-    gStyle -> SetOptStat(0);
+    TexatConfiguration conf;
+    conf.CreateComponents(10);
 
-    ifstream file("list_root");
-    TChain *chain = new TChain("gg");
-    TString fileName;
-    while (file >> fileName)
-        chain -> AddFile(fileName);
+    auto file = new TFile("build/output_1000_1_-3.00_3.00__0.root");
+    auto tree = (TTree*) file -> Get("gg");
 
-    cout << chain -> GetEntries() << endl;
+    double padGapChain = 0;
+    double padSizeChain = .167;
+    double padGapCenter = 0;
+    double padSizeCenter = .342;
 
-    TCanvas *cvs = new TCanvas("cvsAll","",3000,1000);
-    cvs -> Divide(2,1);
+    int numChains1 = 10;
+    int numCenter1 = 3;
+    int numChains = 2 * numChains1;
+    int numCenter = 2 * numCenter1;
+    int numBins = numChains + numCenter;
 
-    cvs -> cd(1);
-    auto hist1 = new TH1D("hist1","start;x;count;",240,-10,10);
-    hist1 -> SetMinimum(0);
-    hist1 -> SetFillColor(kGray);
-    chain -> Draw("xStart>>hist1");
+    double x1 = - (numCenter1 * padSizeCenter) - (numChains1 * padSizeChain);
+    double x2 = - (numCenter1 * padSizeCenter);
+    double x3 = 0;
+    double x4 = + (numCenter1 * padSizeCenter);
+    double x5 = + (numCenter1 * padSizeCenter) + (numChains1 * padSizeChain);
 
-    cvs -> cd(2);
-    auto hist2 = new TH1D("hist2","end;x;count;",240,-10,10);
-    hist2 -> SetFillColor(kGray);
-    chain -> Draw("xEnd>>hist2","yEnd>-0.2");
+    int countBin = 0;
+    double xbins[100];
+    for (auto iBin=0; iBin<numChains1; ++iBin) xbins[countBin++] = x1 + padSizeChain*iBin;
+    for (auto iBin=0; iBin<numCenter1; ++iBin) xbins[countBin++] = x2 + padSizeCenter*iBin;
+    for (auto iBin=0; iBin<numCenter1; ++iBin) xbins[countBin++] = x3 + padSizeCenter*iBin;
+    for (auto iBin=0; iBin<numChains1; ++iBin) xbins[countBin++] = x4 + padSizeChain*iBin;
+    xbins[countBin++] = x5;
 
-    //cvs -> cd(3);
-    //auto hist3 = new TH2D("hist3",";x;y;",240,-10,10,100,-0.2,0.1);
-    //chain -> Draw("yEnd:xEnd>>hist3","","colz");
+    //TH1D (const char *name, const char *title, Int_t nbinsx, const Double_t *xbins)
+    auto histStart0    = new TH1D("histStart0" ,"(All) Equal size binning;x (cm)",40,-3,3);
+    auto histStart     = new TH1D("histStart" ,"(All) Real pad size binning;x (cm)",numBins,xbins);
+    auto histAbsorbed  = new TH1D("histAbsorbed" ,"(Absorbed by wires) Real pad size binning;x (cm)",100,-3,3);
+    auto histCollected = new TH1D("histCollected","(Collected by pads) Real pad size binning;x (cm)",numBins,xbins);
+    histStart0    -> SetMinimum(0);
+    histStart     -> SetMinimum(0);
+    histAbsorbed  -> SetMinimum(0);
+    histCollected -> SetMinimum(0);
+    histStart0    -> SetFillColor(kGray);
+    histStart     -> SetFillColor(kGray);
+    histAbsorbed  -> SetFillColor(kGray);
+    histCollected -> SetFillColor(kGray);
 
-    //cvs -> cd(4);
-    //auto hist4 = new TH2D("hist4",";x0;x1-x0;",240,-10,10,100,-2,2);
-    //chain -> Draw("xEnd-xStart:xStart>>hist4","yEnd>-0.2","colz");
+    auto DrawPadBoundary = [numBins,xbins](TH1 *hist) {
+        auto histLColor = hist -> GetLineColor();
+        for (auto iBin=1; iBin<numBins; ++iBin) {
+            auto y = hist -> GetBinContent(iBin);
+            auto line = new TLine(xbins[iBin],0,xbins[iBin],y);
+            line -> SetLineColor(histLColor);
+            line -> SetLineStyle(2);
+            line -> Draw("samel");
+        }
+    };
+
+    auto cvs = new TCanvas("cvs","",2000,1500);
+    cvs -> Divide(2,2);
+    TString drawOption = "";
+    cvs -> cd(1); tree -> Draw("xStart>>histStart0" ,""       ,drawOption); conf.DrawGraph();
+    cvs -> cd(2); tree -> Draw("xStart>>histStart"  ,""       ,drawOption); DrawPadBoundary(histStart    ); conf.DrawGraph();
+    cvs -> cd(3); tree -> Draw("xEnd>>histAbsorbed" ,"yEnd<-1",drawOption); conf.DrawGraph();
+    cvs -> cd(4); tree -> Draw("xEnd>>histCollected","yEnd>-1",drawOption); DrawPadBoundary(histCollected); conf.DrawGraph();
+
+    cvs -> SaveAs("figure_e_collected_and_absorbed.png");
 }

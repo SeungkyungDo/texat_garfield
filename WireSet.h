@@ -1,10 +1,10 @@
 #ifndef WIRESET_HH
 #define WIRESET_HH
 
+#ifndef NOGARFIELD
 #include "Garfield/ComponentAnalyticField.hh"
-
 using namespace Garfield;
-using namespace std;
+#endif
 
 #include "TString.h"
 #include "TGraph.h"
@@ -54,23 +54,47 @@ class WireSet
         }
 
         //////////////////////////////////////////////////////////////////////////////
-        void CreateWires(ComponentAnalyticField &cmp) {
+#ifndef NOGARFIELD
+        void CreateWires(ComponentAnalyticField &cmp)
+        {
             for(int i=0; i<n; i++) {
                 auto x = x0+i*pitch;
                 cmp.AddWire(x, y, 2*r, v, name.Data());
                 graph -> SetPoint(i,x,y);
             }
         }
-
-        //////////////////////////////////////////////////////////////////////////////
-        void CreateAndDrawFieldValueGraph(TF2 *f2, int nTest=100, double testRange=0.25) {
+#else
+        void CreateWires(double yy=-99999)
+        {
+            if (yy<-99998) yy = y;
             for(int i=0; i<n; i++) {
                 auto x = x0+i*pitch;
-                auto graph1 = new TGraph();
-                graph1 -> SetLineColor(lcolor);
-                for (double dx=0.; dx<testRange; dx+=testRange/nTest)
-                    graph1->SetPoint(graph1->GetN(),dx,f2->Eval(x+dx,y));
-                graph1 -> Draw("samel");
+                graph -> SetPoint(i,x,yy);
+            }
+        }
+#endif
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateAndDrawFieldValueGraphX(TF2 *f2, int nTest=100, double x2=0.25) {
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                auto graph_vx = new TGraph();
+                graph_vx -> SetLineColor(lcolor);
+                for (double dx=0.; dx<x2; dx+=x2/nTest)
+                    graph_vx->SetPoint(graph_vx->GetN(),dx,f2->Eval(x+dx,y));
+                graph_vx -> Draw("samel");
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateAndDrawFieldValueGraphY(TF2 *f2, int nTest=400, double y1 = -12, double y2=4) {
+            for(int i=0; i<n; i++) {
+                auto x = x0+i*pitch;
+                auto graph_vy = new TGraph();
+                graph_vy -> SetLineColor(lcolor);
+                for (double dy=y1; dy<y2; dy+=y2/nTest)
+                    graph_vy->SetPoint(graph_vy->GetN(),dy,f2->Eval(x,y+dy));
+                graph_vy -> Draw("samel");
             }
         }
 };
@@ -109,13 +133,23 @@ class TexatConfiguration
         }
 
         //////////////////////////////////////////////////////////////////////////////
-        void CreateComponents(ComponentAnalyticField &cmp) {
+#ifndef NOGARFIELD
+        void CreateComponents(ComponentAnalyticField &cmp)
+        {
             fWireFC0.CreateWires(cmp);
             fWireGG1.CreateWires(cmp);
             fWireGG2.CreateWires(cmp);
             const double vMMGEM = 0.;
             cmp.AddPlaneY(fYMM,vMMGEM,"MMGEM");
         }
+#else
+        void CreateComponents(double yy=-99999)
+        {
+            //fWireFC0.CreateWires(yy);
+            fWireGG1.CreateWires(yy);
+            fWireGG2.CreateWires(yy);
+        }
+#endif
 
         //////////////////////////////////////////////////////////////////////////////
         void DrawGraph(TString option="psame")
@@ -126,10 +160,17 @@ class TexatConfiguration
         }
 
         //////////////////////////////////////////////////////////////////////////////
-        void CreateAndDrawFieldValueGraph(TF2 *f2)
+        void CreateAndDrawFieldValueGraphX(TF2 *f2)
         {
-            fWireGG1.CreateAndDrawFieldValueGraph(f2);
-            fWireGG2.CreateAndDrawFieldValueGraph(f2);
+            fWireGG1.CreateAndDrawFieldValueGraphX(f2);
+            fWireGG2.CreateAndDrawFieldValueGraphX(f2);
+        }
+
+        //////////////////////////////////////////////////////////////////////////////
+        void CreateAndDrawFieldValueGraphY(TF2 *f2)
+        {
+            fWireGG1.CreateAndDrawFieldValueGraphY(f2);
+            fWireGG2.CreateAndDrawFieldValueGraphY(f2);
         }
 };
 

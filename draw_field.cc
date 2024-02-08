@@ -102,20 +102,29 @@ int main(int argc, char * argv[])
     auto hist = f2 -> GetHistogram();
     hist -> GetXaxis() -> SetRangeUser(zoomx1,zoomx2);
     hist -> GetYaxis() -> SetRangeUser(zoomy1,zoomy2);
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s%s.root",name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
 
     //////////////////////////////////////////////////////////////////////////
-    name0 = "field_value";
+    name0 = "field_value_x";
     cvs = new TCanvas(name0, "", dxCvs, dyCvs);
-    int nTest = 100;
     double testRange = 0.25;
-    auto frame = new TH2D("hist_v",";Offset dx from wire center [cm];Field value (V)",nTest,0,testRange,100,vRange1,vRange2);
-    frame -> SetStats(0);
-    frame -> Draw();
-    conf.CreateAndDrawFieldValueGraph(f2);
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s%s.png", name0.Data(),tag.Data()));
-    if (saveFigures) cvs -> SaveAs(Form("figure_%s%s.root",name0.Data(),tag.Data()));
+    auto hist_vx = new TH2D("hist_vx",";Offset dx from wire center [cm];Field value (V)",100,0,testRange,100,vRange1,vRange2);
+    hist_vx -> SetStats(0);
+    hist_vx -> Draw();
+    conf.CreateAndDrawFieldValueGraphX(f2);
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
+
+    //////////////////////////////////////////////////////////////////////////
+    name0 = "field_value_y";
+    cvs = new TCanvas(name0, "", dxCvs, dyCvs);
+    auto hist_vy = new TH2D("hist_vy",";offset dy from wire center [cm];Field value (V)",100,-12,4,100,-1600,0);
+    hist_vy -> SetStats(0);
+    hist_vy -> Draw();
+    conf.CreateAndDrawFieldValueGraphY(f2);
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.png", name0.Data(),tag.Data()));
+    if (saveFigures) cvs -> SaveAs(Form("figure_%s_%s.root",name0.Data(),tag.Data()));
 
     //////////////////////////////////////////////////////////////////////////
     name0 = "field_voltage2D";

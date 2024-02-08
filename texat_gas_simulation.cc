@@ -73,7 +73,8 @@ int main(int argc, char * argv[])
          << ", numSimPoints=" << numSimPoints
          << ", showFigures=" << showFigures << endl;
 
-    TString tag = Form("%d",simulationIndex);
+    //TString tag = Form("%d",simulationIndex);
+    TString tag = Form("%d_%d_%.2f_%.2f__%d",numElectrons,numSimPoints,xMinSim,xMaxSim,simulationIndex);
 
     /////////////////////////////////////////////////////////////////////////
     int dxCvs = 1200;
