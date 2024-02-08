@@ -1,10 +1,13 @@
 ana*/
 build/
 pbuild*/
-*root
-condor
+data*/
+figures*/
+condor*/
+
 ss_all*
 submit_*
 figure*
+
 *.root
 *.png
