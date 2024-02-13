@@ -26,6 +26,7 @@ void ana_output()
     double x3 = 0;
     double x4 = + (numCenter1 * padSizeCenter);
     double x5 = + (numCenter1 * padSizeCenter) + (numChains1 * padSizeChain);
+    cout << x1 << " " << x2 << " " << x3 << " " << x4 << " " << x5 << endl;
 
     int countBin = 0;
     double xbins[100];
@@ -64,11 +65,14 @@ void ana_output()
 
     auto cvs = new TCanvas("cvs","",1500,1200);
     cvs -> Divide(2,2);
-    TString drawOption = "";
-    cvs -> cd(1); tree -> Draw("xStart>>histStart0" ,""       ,drawOption); conf.DrawWires();
-    cvs -> cd(2); tree -> Draw("xStart>>histStart"  ,""       ,drawOption); DrawPadBoundary(histStart); conf.DrawWires();
-    cvs -> cd(3); tree -> Draw("xEnd>>histAbsorbed" ,"yEnd<-1",drawOption); conf.DrawWires();
-    cvs -> cd(4); tree -> Draw("xEnd>>histCollected","yEnd>-1",drawOption); DrawPadBoundary(histCollected); conf.DrawWires();
+    cvs -> cd(1); tree -> Draw("xStart>>histStart0" ,""       ); conf.DrawWires();
+    cvs -> cd(2); tree -> Draw("xStart>>histStart"  ,""       ); DrawPadBoundary(histStart); conf.DrawWires();
+    cvs -> cd(3); tree -> Draw("xEnd>>histAbsorbed" ,"yEnd<-1"); conf.DrawWires();
+    cvs -> cd(4); tree -> Draw("xEnd>>histCollected","yEnd>-1"); DrawPadBoundary(histCollected); conf.DrawWires();
 
-    cvs -> SaveAs("figure_e_collected_and_absorbed.png");
+    cvs -> SaveAs("figures/figure_e_collected_and_absorbed.png");
+
+    auto cvs2 = new TCanvas("cvs2","",800,600);
+    auto histY = new TH1D("histY",Form("xStart>%.4f && xStart<%.4f;y_{End};count",x2,x4),40,-4,1.0);
+    tree -> Draw("yEnd>>histY",Form("xStart>%f&&xStart<%f",x2,x4));
 }
