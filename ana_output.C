@@ -75,4 +75,20 @@ void ana_output()
     auto cvs2 = new TCanvas("cvs2","",800,600);
     auto histY = new TH1D("histY",Form("xStart>%.4f && xStart<%.4f;y_{End};count",x2,x4),40,-4,1.0);
     tree -> Draw("yEnd>>histY",Form("xStart>%f&&xStart<%f",x2,x4));
+
+
+    auto cvs3 = new TCanvas("cvs3","",800,600);
+    auto histCollected1 = (TH1D*) histCollected -> Clone("histCollected1");
+    histCollected1 -> SetTitle("histCollected1 / histStart");
+    histCollected1 -> Divide(histStart);
+    histCollected1 -> Draw();
+    DrawPadBoundary(histCollected1);
+    conf.DrawWires();
+
+    for (auto iBin=1; iBin<=numBins; ++iBin)
+    {
+        auto value = histCollected1 -> GetBinContent(iBin);
+        auto center = histCollected1 -> GetBinCenter(iBin);
+        cout << iBin << " " << center << " " << value << endl;
+    }
 }
