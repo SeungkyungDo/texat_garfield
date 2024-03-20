@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
     if (argc<3) {
         cout << "== Input should be given" << endl;
         cout << "   0) simulation index (full simulation up to (numSimPoints - 1)" << endl;
-        cout << "   1) (optional, default=" << numElectrons << ") number of electrons in each point," << endl;
+        cout << "   1) (optional, default=" << numElectrons << ") number of electrons total," << endl;
         cout << "   2) (optional, default=" << numSimPoints << ") number of binning through x-range" << endl;
         cout << "   3) (optional, default=" << xMinSim      << ") x-range 1," << endl;
         cout << "   4) (optional, default=" << xMaxSim      << ") x-range 2." << endl;
@@ -149,7 +149,9 @@ int main(int argc, char * argv[])
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
     double xStart, yStart, zStart, tStart, eStart;   
     double xEnd, yEnd, zEnd, tEnd, eEnd;				
-    TFile* fnew = new TFile(Form("data/output_%s.root",tag.Data()),"RECREATE");
+    TString fnewName = Form("data/output_%s.root",tag.Data());
+    cout << fnewName << endl;
+    TFile* fnew = new TFile(fnewName,"RECREATE");
     TTree* tree = new TTree("gg","");
     tree -> Branch("xStart",&xStart,"xStart/D");
     tree -> Branch("yStart",&yStart,"yStart/D");
@@ -218,13 +220,17 @@ int main(int argc, char * argv[])
     fnew -> WriteTObject(tree);
     fnew -> Close();
 
-    ofstream flog(Form("data/log_%s.txt",tag.Data()));
-    flog << simulationIndex << endl;
-    flog << numElectrons << endl;
-    flog << numSimPoints << endl;
-    flog << xMinSim << endl;
-    flog << xMaxSim << endl;
-    flog << showFigures << endl;
+    TString logFileName = Form("data/log_%s.txt",tag.Data());
+    cout << logFileName << endl;
+    ofstream flog(logFileName);
+    flog << left << setw(18) << "simulationIndex " << simulationIndex << endl;
+    flog << left << setw(18) << "numElectrons " <<    numElectrons << endl;
+    flog << left << setw(18) << "numSimPoints " <<    numSimPoints << endl;
+    flog << left << setw(18) << "xMinSim " <<         xMinSim << endl;
+    flog << left << setw(18) << "xMaxSim " <<         xMaxSim << endl;
+    flog << left << setw(18) << "showFigures " <<     showFigures << endl;
+    flog << endl;
+    flog << conf.Dump() << endl;
 
     if (showFigures) gApplication -> Run();
     return 0;

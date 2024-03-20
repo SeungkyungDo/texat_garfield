@@ -7,7 +7,11 @@ void ana_output()
     double userYPosition = 10;
     conf.CreateComponents(userYPosition);
 
-    auto file = new TFile("data/output_1000_1_-3.00_3.00__0.root");
+    //auto file = new TFile("data/output_1000_1_-3.00_3.00__0.root");
+    //auto file = new TFile("data/output_1000_1_-3.50_3.50__0.root");
+    //auto file = new TFile("data/output_2000_1_-5.00_5.00__0.root");
+    //auto file = new TFile("data/output_200_1_-5.00_5.00__0.root");
+    auto file = new TFile("data/output_1000_-2_2.50_1.00__0.root");
     auto tree = (TTree*) file -> Get("gg");
 
     double padGapChain = 0;
@@ -15,7 +19,7 @@ void ana_output()
     double padGapCenter = 0;
     double padSizeCenter = .342;
 
-    int numChains1 = 10;
+    int numChains1 = 25;
     int numCenter1 = 3;
     int numChains = 2 * numChains1;
     int numCenter = 2 * numCenter1;
@@ -37,9 +41,9 @@ void ana_output()
     xbins[countBin++] = x5;
 
     //TH1D (const char *name, const char *title, Int_t nbinsx, const Double_t *xbins)
-    auto histStart0    = new TH1D("histStart0" ,"(All) Equal size binning;x (cm)",40,-3,3);
-    auto histStart     = new TH1D("histStart" ,"(All) Equal pad size binning;x (cm)",numBins,xbins);
-    auto histAbsorbed  = new TH1D("histAbsorbed" ,"(Absorbed by wires);x (cm)",100,-3,3);
+    auto histStart0    = new TH1D("histStart0" ,"(All) Equal size binning;x (cm)",40,x1,x5);
+    auto histStart     = new TH1D("histStart" ,"(All) Real pad size binning;x (cm)",numBins,xbins);
+    auto histAbsorbed  = new TH1D("histAbsorbed" ,"(Absorbed by wires);x (cm)",100,x1,x5);
     auto histCollected = new TH1D("histCollected","(Collected by pads) Real pad size binning;x (cm)",numBins,xbins);
     histStart0    -> SetMinimum(0);
     histStart     -> SetMinimum(0);
@@ -73,7 +77,8 @@ void ana_output()
     cvs -> SaveAs("figures/figure_e_collected_and_absorbed.png");
 
     auto cvs2 = new TCanvas("cvs2","",800,600);
-    auto histY = new TH1D("histY",Form("xStart>%.4f && xStart<%.4f;y_{End};count",x2,x4),40,-4,1.0);
+    //auto histY = new TH1D("histY",Form("xStart>%.4f && xStart<%.4f;y_{End};count",x2,x4),40,-4,1.0);
+    auto histY = new TH1D("histY",Form("xStart>%.4f && xStart<%.4f;y_{End};count",x2,x4),40,-0.3,0.1);
     tree -> Draw("yEnd>>histY",Form("xStart>%f&&xStart<%f",x2,x4));
 
 
