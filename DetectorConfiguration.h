@@ -31,6 +31,12 @@ class WireSet
         ~WireSet() {}
 
         //////////////////////////////////////////////////////////////////////////////
+        TString Dump() {
+            TString dump = Form("%s: (n,v)=(%d,%.0f) (x0,y)=(%.4f,%.4f), [x]=(%.4f,%.4f), (pitch,r)=(%.4f,%.4f)", name.Data(), n, v, x0, y, xMin, xMax, pitch, r);
+            return dump;
+        }
+
+        //////////////////////////////////////////////////////////////////////////////
         void SetPar(TString name_, int n_, double x0_, double pitch_, double v_, double y_, double r_, int mstyle_=20, int mcolor_=kBlack, int lcolor_=kBlack) {
             name = name_;
             n = n_;
@@ -42,18 +48,12 @@ class WireSet
             mstyle = mstyle_;
             mcolor = mcolor_;
             lcolor = lcolor_;
-            cout << "* name = " << name
-                 << ", n = " << n
-                 << ", x0 = " << x0
-                 << ", pitch = " << pitch
-                 << ", v = " << v
-                 << ", y = " << y
-                 << ", r = " << r << endl;
             graph = new TGraph();
             graph -> SetMarkerStyle(mstyle);
             graph -> SetMarkerColor(mcolor);
             xMin = x0;
             xMax = x0+(n-1)*pitch;
+            cout << Dump() << endl;
         }
 
         //////////////////////////////////////////////////////////////////////////////
@@ -111,6 +111,7 @@ class TexatConfiguration
         double xMin = DBL_MAX;
         double xMax = -DBL_MAX;
         double fYMM = 0;
+        double fVMMGEM = 0.;
 
         TexatConfiguration() { SetParameters(); }
         ~TexatConfiguration() {};
@@ -123,12 +124,18 @@ class TexatConfiguration
             double x0, pitch, v, y, r;
             int n1 = 101;
             int n2 = 8;
+            //fVMMGEM = 0;
             //fWireFC0.SetPar(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
             //fWireGG1.SetPar(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
             //fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
-            fWireFC0.SetPar(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.-3.4, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
-            fWireGG1.SetPar(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-3.4,     r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
-            fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-3.4,     r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
+            //fVMMGEM = 0;
+            //fWireFC0.SetPar(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.-3.4, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
+            //fWireGG1.SetPar(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-3.4,     r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
+            //fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-3.4,     r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
+            fVMMGEM = -230;
+            fWireFC0.SetPar(nameSet="FC0", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-1600, y=-11.265, r=0.005, mstyle=26, mcolor=kBlack, lcolor=kBlack);
+            fWireGG1.SetPar(nameSet="GG1", n=n1, x0=  -(n1-1)/2*0.5, pitch=0.5, v=-260,  y=-0.201,  r=0.005, mstyle=24, mcolor=kBlack, lcolor=kGray+1);
+            fWireGG2.SetPar(nameSet="GG2", n=n2, x0=-(n2/2-0.5)*0.5, pitch=0.5, v=-230,  y=-0.201,  r=0.005, mstyle=25, mcolor=kRed  , lcolor=kRed);
             for (auto wireSet : {fWireFC0,fWireGG1,fWireGG2}) {
                 if (xMin>wireSet.xMin) xMin = wireSet.xMin;
                 if (xMax<wireSet.xMax) xMax = wireSet.xMax;
@@ -142,8 +149,7 @@ class TexatConfiguration
             fWireFC0.CreateWires(cmp);
             fWireGG1.CreateWires(cmp);
             fWireGG2.CreateWires(cmp);
-            const double vMMGEM = 0.;
-            cmp.AddPlaneY(fYMM,vMMGEM,"MMGEM");
+            cmp.AddPlaneY(fYMM,fVMMGEM,"MMGEM");
         }
 #else
         void CreateComponents(double yy=-99999)
@@ -153,6 +159,16 @@ class TexatConfiguration
             fWireGG2.CreateWires(yy);
         }
 #endif
+
+        TString Dump()
+        {
+            TString dump;
+            dump = dump + fWireFC0.Dump() + "\n";
+            dump = dump + fWireGG1.Dump() + "\n";
+            dump = dump + fWireGG2.Dump() + "\n";
+            dump = dump + "GEM: " + fYMM + " " + fVMMGEM;
+            return dump;
+        }
 
         //////////////////////////////////////////////////////////////////////////////
         void DrawGraph(TString option="psame")
