@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <iomanip>
 
 #include <TCanvas.h>
 #include <TROOT.h>
@@ -11,6 +12,7 @@
 #include "TF2.h"
 #include "TH2D.h"
 #include <TApplication.h>
+#include <TVector3.h>
 
 #include "Garfield/ViewCell.hh"
 #include "Garfield/ViewDrift.hh"
@@ -41,10 +43,13 @@ int main(int argc, char * argv[])
     double zSim = 0.;
 
     /////////////////////////////////////////////////////////////////////////
-    int    numElectrons = 100;
-    int    numSimPoints = 100;
+    int    numElectronsPerPosition = 100;
+    int    numSimPoints            = 100;
+    int    numElectrons            = numSimPoints*numElectronsPerPosition;
     double xMinSim = -10.;
     double xMaxSim = +10.;
+    int simulationIndex = 0;
+    /*
     if (argc<3) {
         cout << "== Input should be given" << endl;
         cout << "   0) simulation index (full simulation up to (numSimPoints - 1)" << endl;
@@ -65,6 +70,7 @@ int main(int argc, char * argv[])
     if (argc>4) xMinSim = std::atof(argv[4]);
     if (argc>4) xMaxSim = std::atof(argv[5]);
     if (argc>6) showFigures = bool(std::atoi(argv[6]));
+    */
     double xSpacing = ((xMaxSim - xMinSim) / numSimPoints);
     cout << "* numElectrons=" << numElectrons
          << ", numSimPoints=" << numSimPoints
@@ -83,8 +89,8 @@ int main(int argc, char * argv[])
     double vRange2 = 0.;
     double y1 = -12;
     double y2 = 1;
-    double z1 = -15;
-    double z2 = 5;
+    double z1 = -5;
+    double z2 = 90;
     double fieldValueHistSpacing = 0.01;
 
     TexatConfiguration conf;
@@ -125,10 +131,10 @@ int main(int argc, char * argv[])
     /////////////////////////////////////////////////////////////////////////
     AvalancheMicroscopic drift;
     drift.SetSensor(&sensor);
-    drift.SetCollisionSteps(400); // The number of steps for the simulation.
+    drift.SetCollisionSteps(500); // The number of steps for the simulation.
 
     if (showFigures) {
-        cvs = new TCanvas("cvs","",1600,1200);
+        cvs = new TCanvas("cvs","",1000,700);
         driftView.SetCanvas(cvs);
         driftView.SetPlane(0,0,1,0,0,0);
         driftView.SetArea(x1,y1,x2,y2);
@@ -147,17 +153,17 @@ int main(int argc, char * argv[])
     // readTransferFunction(sensor); // Implement this function or load the transfer function file.
 
     ///////////////////////////////////////////////////////////////////////Added by S. Bae 240124
-    double xStart, yStart, zStart, tStart, eStart;   
-    double xEnd, yEnd, zEnd, tEnd, eEnd;				
+    double xStartVal, yStart, zStart, tStart, eStart;   
+    double xEndVal, yEnd, zEnd, tEnd, eEnd;				
     TString fnewName = Form("data/output_%s.root",tag.Data());
     cout << fnewName << endl;
     TFile* fnew = new TFile(fnewName,"RECREATE");
     TTree* tree = new TTree("gg","");
-    tree -> Branch("xStart",&xStart,"xStart/D");
+    tree -> Branch("xStart",&xStartVal,"xStart/D");
     tree -> Branch("yStart",&yStart,"yStart/D");
     tree -> Branch("zStart",&zStart,"zStart/D");
     tree -> Branch("tStart",&tStart,"tStart/D");
-    tree -> Branch("xEnd",&xEnd,"xEnd/D");
+    tree -> Branch("xEnd",&xEndVal,"xEnd/D");
     tree -> Branch("yEnd",&yEnd,"yEnd/D");
     tree -> Branch("zEnd",&zEnd,"zEnd/D");
     tree -> Branch("tEnd",&tEnd,"tEnd/D");
@@ -169,17 +175,26 @@ int main(int argc, char * argv[])
     auto dx = (xMax-xMin)/numElectrons;
     int numCollected = 0;
     int numAbsorbed = 0;
-    for (int iElPrim = 0; iElPrim < numElectrons; ++iElPrim)
+    //int numPoints = 20;
+    int numPoints = 100;
+    TVector3 xStart(-0.33,-5.0,0.0);
+    TVector3 xEnd(1.0,-5.0,6.80);
+    TGraph* graph = new TGraph();
+    for (int iSimPoint = 0; iSimPoint < numSimPoints; ++iSimPoint)
     {
-        double xSim = xMin + dx*iElPrim;
-        double tSim = 0, eSim = 0;
-        cout << iElPrim << "/" << numElectrons << ", pos=(" << xSim << "," << ySim << "," << zSim << ")" << endl;
-
+        double tSim = static_cast<double>(iSimPoint)/numSimPoints;
+        double xSim = xStart.x() + tSim * (xEnd.x() - xStart.x());
+        double zSim = xStart.z() + tSim * (xEnd.z() - xStart.z());
+        cout << iSimPoint << "/" << numSimPoints << ", pos=(" << xSim << "," << ySim << "," << zSim << ")" << endl;
+        graph->SetPoint(iSimPoint,xSim,zSim);
         /// \param x,y,z,t starting point of the electron
         /// \param e initial energy of the electron
         /// \param dx,dy,dz initial direction vector of the electron
         /// If the initial direction is not specified, it is sampled randomly.
-        drift.AvalancheElectron(xSim, ySim, zSim, tSim, eSim);
+
+        for (int j = 0; j < numElectronsPerPosition; ++j) { // 각 위치에서 100개의 전자 발생
+            double eSim = 0.0;
+            drift.AvalancheElectron(xSim, ySim, zSim, tSim, eSim);
 
         int numAvElectrons, numAvIons;
         drift.GetAvalancheSize(numAvElectrons,numAvIons);
@@ -190,7 +205,7 @@ int main(int argc, char * argv[])
         for (int iAvalanche = 0; iAvalanche < numAvalanche; ++iAvalanche)
         {
             int status;
-            drift.GetElectronEndpoint(iAvalanche, xStart, yStart, zStart, tStart, eStart, xEnd, yEnd, zEnd, tEnd, eEnd, status);
+            drift.GetElectronEndpoint(iAvalanche, xStartVal, yStart, zStart, tStart, eStart, xEndVal, yEnd, zEnd, tEnd, eEnd, status);
             tree -> Fill();
 
             if (std::abs(conf.fWireGG2.y-yEnd) < conf.fWireGG2.r)
@@ -209,6 +224,7 @@ int main(int argc, char * argv[])
              << "> #Avalanche = " << numAvalanche
              << ", #Absorbed = " << numAbsorbed << "(+" << numAbsorbed0 << ")"
              << ", #Collected = " << numCollected << "(+" << numCollected0 << ")" << endl;
+        }
     }
 
     if (showFigures) {
@@ -231,6 +247,8 @@ int main(int argc, char * argv[])
     flog << left << setw(18) << "showFigures " <<     showFigures << endl;
     flog << endl;
     flog << conf.Dump() << endl;
+
+    graph -> Draw("samepl");
 
     if (showFigures) gApplication -> Run();
     return 0;

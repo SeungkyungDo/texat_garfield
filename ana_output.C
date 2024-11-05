@@ -11,7 +11,7 @@ void ana_output()
     //auto file = new TFile("data/output_1000_1_-3.50_3.50__0.root");
     //auto file = new TFile("data/output_2000_1_-5.00_5.00__0.root");
     //auto file = new TFile("data/output_200_1_-5.00_5.00__0.root");
-    auto file = new TFile("data/output_1000_-2_2.50_1.00__0.root");
+    auto file = new TFile("data/output_10000_100_-10.00_10.00__0.root");
     auto tree = (TTree*) file -> Get("gg");
 
     double padGapChain = 0;
